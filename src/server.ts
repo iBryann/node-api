@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import { Router, Request, Response } from 'express';
 
@@ -6,39 +6,28 @@ const app = express();
 const route = Router();
 
 route.get('/', (req: Request, res: Response) => {
-
   res.json({
-    message: 'hello world with Typescript',
+    message: 'Hello world!',
   });
 });
 
-interface IQuery {
-  x: number
-  y: number;
-}
+const prisma = new PrismaClient();
 
-route.post('/', (req: Request, res: Response) => {
-  const { x, y } = req.query as unknown as  IQuery;
-  const n1 = x || 1;
-  const n2 = y || 1;
+route.get('/user/all', async (req: Request, res: Response) => {
+  const users = await prisma.users.findMany();
 
-  res.status(200).send({ result: n1 * n2 });
+  res.send(users);
 });
 
+route.get('/user/create', async (req: Request, res: Response) => {
+  const name = req.query.name as string;
+  const response = await prisma.users.create({
+    data: {
+      name
+    }
+  });
 
-route.get('/address', (req: Request, res: Response) => {
-  const { cep, CEP } = req.query;
-  const address = cep || CEP;
-
-  axios(`https://api.postmon.com.br/v1/cep/${address}`)
-    .then(({ data }) => res.send(data))
-    .catch(err => {
-      res.status(500).send({
-        code: err.code,
-        aaa: err.status,
-        message: err.message,
-      });
-    });
+  res.status(201).send(response);
 });
 
 app.use(express.json());
