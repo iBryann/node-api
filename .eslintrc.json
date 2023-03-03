@@ -18,10 +18,20 @@
     "@typescript-eslint"
   ],
   "rules": {
+    "sort-imports": "error",
     "semi": ["error", "always"],
     "indent": ["error", 2],
     "quotes": ["error", "single"],
+    "max-len": ["error", { "code": 80 }],
+    "comma-dangle": ["error", {
+      "arrays": "always-multiline",
+      "objects": "always-multiline",
+      "imports": "always-multiline",
+      "exports": "always-multiline",
+      "functions": "always-multiline"
+    }],
     "linebreak-style": ["error", "windows"],
-    "object-curly-spacing": ["error", "always", { "arraysInObjects": true }]
+    "object-curly-spacing": ["error", "always", { "arraysInObjects": true }],
+    "no-multiple-empty-lines": ["error", { "max": 1, "maxBOF": 0, "maxEOF": 0 }]
   }
 }

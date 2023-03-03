@@ -14,7 +14,7 @@ model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   password  String
-  createdAt DateTime
+  createdAt DateTime @default(now())
   List      List[]
 
   @@unique([username, password])
@@ -24,16 +24,16 @@ model List {
   id        Int      @id @default(autoincrement())
   title     String
   userId    Int
-  createdAt DateTime
+  createdAt DateTime @default(now())
   Task      Task[]
   User      User     @relation(fields: [userId], references: [id])
 }
 
 model Task {
   id          Int      @id @default(autoincrement())
-  done        Boolean
+  done        Boolean  @default(false)
   description String
   listId      Int
-  createdAt   DateTime
+  createdAt   DateTime @default(now())
   List        List     @relation(fields: [listId], references: [id])
 }
