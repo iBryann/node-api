@@ -2,8 +2,8 @@ import listRouter from './list';
 import taskRouter from './task';
 import userRouter from './user';
 
-export {
+export const routes = [
   listRouter,
   taskRouter,
   userRouter,
-};
+];

@@ -1,21 +1,22 @@
 import { Request, Response, Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { auth, getJwtPayload } from '../auth';
 import { z } from 'zod';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-router.post('/list', async (req: Request, res: Response) => {
+router.post('/list', auth, async (req: Request, res: Response) => {
   try {
+    const { id } = getJwtPayload(req);
     const listSchema = z.object({
-      userId: z.coerce.number(),
       title: z.string(),
     });
-    const { title, userId } = listSchema.parse(req.body);
+    const { title } = listSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({
       where: {
-        id: userId,
+        id,
       },
     });
 
@@ -28,8 +29,13 @@ router.post('/list', async (req: Request, res: Response) => {
 
     prisma.list.create({
       data: {
-        userId,
+        userId: id,
         title,
+      },
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
       },
     })
       .then(response => res.status(201).send(response))
@@ -39,12 +45,12 @@ router.post('/list', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/list', async (req: Request, res: Response) => {
-  const userId = Number(req.query.userId) ? Number(req.query.userId) : -1;
+router.get('/list', auth, async (req: Request, res: Response) => {
+  const { id } = getJwtPayload(req);
 
   prisma.list.findMany({
     where: {
-      userId,
+      userId: id,
     },
     select: {
       id: true,
@@ -63,12 +69,12 @@ router.get('/list', async (req: Request, res: Response) => {
     .catch(error => res.status(500).send(error));
 });
 
-router.get('/list/one', async (req: Request, res: Response) => {
-  const id = Number(req.query.id) ? Number(req.query.id) : -1;
+router.get('/list/:id', auth, async (req: Request, res: Response) => {
+  const id = Number(req.params.id) ? Number(req.params.id) : -1;
 
   prisma.list.findUnique({
     where: {
-      id: id,
+      id,
     },
     select: {
       id: true,
@@ -87,35 +93,60 @@ router.get('/list/one', async (req: Request, res: Response) => {
     .catch(error => res.status(500).send(error));
 });
 
-router.patch('/list', async (req: Request, res: Response) => {
+router.patch('/list', auth, async (req: Request, res: Response) => {
+  const { id: userId } = getJwtPayload(req);
   const id = Number(req.body.id) ? Number(req.body.id) : -1;
   const title = String(req.body.title);
 
-  prisma.list.update({
+  prisma.user.update({
     where: {
-      id,
+      id: userId,
     },
     data: {
-      title,
+      List: {
+        update: {
+          where: {
+            id,
+          },
+          data: {
+            title,
+          },
+        },
+      },
     },
     select: {
-      id: true,
-      title: true,
+      List: {
+        where: {
+          id,
+        },
+        select: {
+          id: true,
+          title: true,
+        },
+      },
     },
   })
-    .then(response => res.status(201).send(response))
+    .then(response => res.status(201).send(response.List))
     .catch(error => res.status(500).send(error));
 });
 
-router.delete('/list', async (req: Request, res: Response) => {
-  const id = Number(req.query.id) ? Number(req.query.id) : -1;
+router.delete('/list/:id', auth, async (req: Request, res: Response) => {
+  const { id: userId } = getJwtPayload(req);
+  const id = Number(req.params.id) ? Number(req.params.id) : -1;
 
-  prisma.list.delete({
+  prisma.user.update({
     where: {
-      id,
+      id: userId,
+    },
+    data: {
+      List: {
+        delete: {
+          id,
+        },
+      },
     },
   })
-    .then(response => res.status(200).send(response))
+    .then(() => res.status(200).send({ id, message: 'List removed.' }))
     .catch(error => res.status(500).send(error));
 });
 

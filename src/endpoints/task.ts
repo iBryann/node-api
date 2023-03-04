@@ -1,11 +1,12 @@
 import { Request, Response, Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { auth } from '../auth';
 import { z } from 'zod';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-router.post('/task', async (req: Request, res: Response) => {
+router.post('/task', auth, async (req: Request, res: Response) => {
   try {
     const taskSchema = z.object({
       listId: z.coerce.number(),
@@ -39,7 +40,7 @@ router.post('/task', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/task', async (req: Request, res: Response) => {
+router.patch('/task', auth, async (req: Request, res: Response) => {
   const { body } = req;
   const id = Number(body.id) ? Number(body.id) : -1;
   const description = String(body.description);
@@ -64,7 +65,7 @@ router.patch('/task', async (req: Request, res: Response) => {
     .catch(error => res.status(500).send(error));
 });
 
-router.delete('/task', async (req: Request, res: Response) => {
+router.delete('/task', auth, async (req: Request, res: Response) => {
   const id = Number(req.query.id) ? Number(req.query.id) : -1;
 
   prisma.task.delete({

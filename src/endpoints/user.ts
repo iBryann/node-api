@@ -1,13 +1,10 @@
 import { Request, Response, Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { generateToken } from '../auth';
 import { z } from 'zod';
 
 const router = Router();
 const prisma = new PrismaClient();
-
-router.get('/', (req: Request, res: Response) => {
-  res.send(true);
-});
 
 router.post('/login', async (req: Request, res: Response) => {
   const username = req.body.username;
@@ -16,25 +13,32 @@ router.post('/login', async (req: Request, res: Response) => {
   if (!username || !password) {
     res.status(401).send({
       code: 401,
-      status: 'Unauthorized',
       message: 'Missing username or password.',
     });
   }
 
-  prisma.user.findUniqueOrThrow({
-    where: {
-      username_password: {
-        username,
-        password,
+  try {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: {
+        username_password: {
+          username,
+          password,
+        },
       },
-    },
-    select: {
-      id: true,
-      username: true,
-    },
-  })
-    .then(user => res.status(200).send(user))
-    .catch(error => res.status(401).send(error));
+      select: {
+        id: true,
+        username: true,
+      },
+    });
+
+    res.status(200).send({ ...user, token: generateToken(user.id) });
+  }
+  catch {
+    res.status(401).send({
+      code: 401,
+      message: 'Login error.',
+    });
+  }
 });
 
 router.post('/user', async (req: Request, res: Response) => {
@@ -49,7 +53,6 @@ router.post('/user', async (req: Request, res: Response) => {
     if (!username || !password) {
       res.status(403).send({
         code: 403,
-        status: 'Forbidden',
         message: 'Missing data to create a user.',
       });
     }
