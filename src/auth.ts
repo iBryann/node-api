@@ -2,7 +2,8 @@ import { JwtPayload, JwtRequest } from './@types/types';
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const SECRET = process.env.SECRET!;
+export const SECRET = String(process.env.SECRET);
+export const EXPIRESIN = Number(process.env.EXPIRESIN);
 
 export function auth(req: Request, res: Response, next: NextFunction) {
   const token = String(req.header('Authorization')?.replace('Bearer ', ''));
@@ -24,8 +25,12 @@ export function auth(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export function generateToken(id: number) {
-  const token = jwt.sign({ id }, SECRET, { expiresIn: 60 * 60 }); // 60 minutes
+export function generateToken(userId: number) {
+  const token = jwt.sign(
+    { userId },
+    SECRET,
+    { expiresIn: 60 * EXPIRESIN },
+  );
 
   return token;
 }

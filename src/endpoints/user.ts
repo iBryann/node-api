@@ -7,8 +7,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 router.post('/login', async (req: Request, res: Response) => {
-  const username = req.body.username;
-  const password = req.body.password;
+  const { username, password } = req.body;
 
   if (!username || !password) {
     res.status(401).send({

@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { auth } from '../auth';
+import { auth, getJwtPayload } from '../auth';
 import { z } from 'zod';
 
 const router = Router();
@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 
 router.post('/task', auth, async (req: Request, res: Response) => {
   try {
+    const { userId } = getJwtPayload(req);
     const taskSchema = z.object({
       listId: z.coerce.number(),
       description: z.string(),
@@ -27,13 +28,40 @@ router.post('/task', auth, async (req: Request, res: Response) => {
       });
     }
 
-    prisma.task.create({
+    prisma.user.update({
+      where: {
+        id: userId,
+      },
       data: {
-        listId,
-        description,
+        List: {
+          update: {
+            where: {
+              id: listId,
+            },
+            data: {
+              Task: {
+                create: {
+                  description,
+                },
+              },
+            },
+          },
+        },
+      },
+      select: {
+        List: {
+          where: {
+            id: listId,
+          },
+          select: {
+            Task: {
+              take: -1,
+            },
+          },
+        },
       },
     })
-      .then(response => res.status(201).send(response))
+      .then(response => res.status(201).send(response.List[0].Task[0]))
       .catch(error => res.status(500).send(error));
   } catch (error) {
     res.status(500).send(error);
@@ -65,15 +93,33 @@ router.patch('/task', auth, async (req: Request, res: Response) => {
     .catch(error => res.status(500).send(error));
 });
 
-router.delete('/task', auth, async (req: Request, res: Response) => {
-  const id = Number(req.query.id) ? Number(req.query.id) : -1;
+router.delete('/task/:id', auth, async (req: Request, res: Response) => {
+  const { userId } = getJwtPayload(req);
+  const id = Number(req.params.id) ? Number(req.params.id) : -1;
+  const listId = Number(req.query.listId) ? Number(req.query.listId) : -1;
 
-  prisma.task.delete({
+  prisma.user.update({
     where: {
-      id,
+      id: userId,
+    },
+    data: {
+      List: {
+        update: {
+          where: {
+            id: listId,
+          },
+          data: {
+            Task: {
+              delete: {
+                id,
+              },
+            },
+          },
+        },
+      },
     },
   })
-    .then(response => res.status(200).send(response))
+    .then(() => res.status(200).send({ id, message: 'Task removed.' }))
     .catch(error => res.status(500).send(error));
 });
 

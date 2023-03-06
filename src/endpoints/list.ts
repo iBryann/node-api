@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 router.post('/list', auth, async (req: Request, res: Response) => {
   try {
-    const { id } = getJwtPayload(req);
+    const { userId } = getJwtPayload(req);
     const listSchema = z.object({
       title: z.string(),
     });
@@ -16,7 +16,7 @@ router.post('/list', auth, async (req: Request, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: {
-        id,
+        id: userId,
       },
     });
 
@@ -27,18 +27,29 @@ router.post('/list', auth, async (req: Request, res: Response) => {
       });
     }
 
-    prisma.list.create({
+    prisma.user.update({
+      where: {
+        id: userId,
+      },
       data: {
-        userId: id,
-        title,
+        List: {
+          create: {
+            title,
+          },
+        },
       },
       select: {
-        id: true,
-        title: true,
-        createdAt: true,
+        List: {
+          take: -1,
+          select: {
+            id: true,
+            title: true,
+            createdAt: true,
+          },
+        },
       },
     })
-      .then(response => res.status(201).send(response))
+      .then(response => res.status(201).send(response.List.pop()))
       .catch(error => res.status(500).send(error));
   } catch (error) {
     res.status(500).send(error);
@@ -46,11 +57,11 @@ router.post('/list', auth, async (req: Request, res: Response) => {
 });
 
 router.get('/list', auth, async (req: Request, res: Response) => {
-  const { id } = getJwtPayload(req);
+  const { userId } = getJwtPayload(req);
 
   prisma.list.findMany({
     where: {
-      userId: id,
+      userId,
     },
     select: {
       id: true,
@@ -94,7 +105,7 @@ router.get('/list/:id', auth, async (req: Request, res: Response) => {
 });
 
 router.patch('/list', auth, async (req: Request, res: Response) => {
-  const { id: userId } = getJwtPayload(req);
+  const { userId } = getJwtPayload(req);
   const id = Number(req.body.id) ? Number(req.body.id) : -1;
   const title = String(req.body.title);
 
@@ -131,7 +142,7 @@ router.patch('/list', auth, async (req: Request, res: Response) => {
 });
 
 router.delete('/list/:id', auth, async (req: Request, res: Response) => {
-  const { id: userId } = getJwtPayload(req);
+  const { userId } = getJwtPayload(req);
   const id = Number(req.params.id) ? Number(req.params.id) : -1;
 
   prisma.user.update({
