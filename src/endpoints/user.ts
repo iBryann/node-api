@@ -10,7 +10,7 @@ router.post('/login', async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    res.status(401).send({
+    return res.status(401).send({
       code: 401,
       message: 'Missing username or password.',
     });
@@ -50,7 +50,7 @@ router.post('/user', async (req: Request, res: Response) => {
     const { password, username } = userSchema.parse(req.body);
 
     if (!username || !password) {
-      res.status(403).send({
+      return res.status(403).send({
         code: 403,
         message: 'Missing data to create a user.',
       });
@@ -63,7 +63,7 @@ router.post('/user', async (req: Request, res: Response) => {
     });
 
     if (user) {
-      res.status(500).send({
+      return res.status(500).send({
         code: 500,
         message: 'This user already exists.',
       });

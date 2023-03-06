@@ -21,7 +21,7 @@ router.post('/list', auth, async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      res.status(500).send({
+      return res.status(500).send({
         code: 500,
         message: 'This user does not exist.',
       });
